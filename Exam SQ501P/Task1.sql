@@ -1,24 +1,24 @@
-WITH datacamp_workspace__user_query AS (
-  SELECT 
-      id,
-      COALESCE(location, 'Unknown') AS location,
-      COALESCE(total_rooms, 100) AS total_rooms,
-      COALESCE(staff_count, CAST(COALESCE(total_rooms, 100) * 1.5 AS INTEGER)) AS staff_count,
-      COALESCE(
-          CAST(NULLIF(REGEXP_REPLACE(opening_date, '[^0-9]', '', 'g'), '') AS INTEGER),
-          2023
-      ) AS opening_date,
-      COALESCE(target_guests, 'Leisure') AS target_guests
-  FROM 
-      branch
-  WHERE 
-      (total_rooms BETWEEN 1 AND 400 OR total_rooms IS NULL)
-      AND (
-          CAST(NULLIF(REGEXP_REPLACE(opening_date, '[^0-9]', '', 'g'), '') AS INTEGER) 
-          BETWEEN 2000 AND 2023 OR opening_date IS NULL
-      )
-      AND (location IN ('EMEA', 'NA', 'LATAM', 'APAC') OR location IS NULL)
-      AND (target_guests IN ('Leisure', 'Business') OR target_guests IS NULL)
-)
-
-SELECT * FROM datacamp_workspace__user_query LIMIT 100;
+SELECT 
+    id,
+    COALESCE(location, 'Unknown') AS location,
+    CASE 
+      WHEN total_rooms BETWEEN 1 AND 400 THEN total_rooms
+      ELSE 100 
+    END AS total_rooms,
+  
+    CASE
+      WHEN staff_count IS NOT NULL THEN staff_count
+      ELSE total_rooms * 1.5 
+    END AS staff_count,
+  
+    CASE
+      WHEN opening_date = '-' THEN '2023' WHEN opening_date BETWEEN '2000' AND '2023' THEN opening_date
+      ELSE '2023' 
+    END AS opening_date,
+  
+    CASE
+      WHEN target_guests IS NULL THEN 'Leisure' WHEN LOWER(target_guests) LIKE 'b%' THEN 'Business'
+      ELSE target_guests 
+    END AS target_guests
+FROM 
+    branch;
